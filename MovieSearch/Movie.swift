@@ -7,49 +7,65 @@
 
 import Foundation
 
-struct MovieResponse: Codable {
-    let docs: [Docs]
+struct ServerResponse: Codable {
+    let docs: [Movie]
+    let total: Int
+    let limit: Int
+    let page: Int
+    let pages: Int
 }
 
-struct Docs: Codable, Identifiable {
+struct Movie: Codable, Identifiable {
     let id: Int
-    let externalId: ExternalId
-    let name: String
+    let name: String?
     let alternativeName: String?
     let enName: String?
+    let type: String
+    let typeNumber: Int
     let year: Int?
     let description: String?
+    let shortDescription: String?
+    let status: String?
     let rating: Rating
-    let poster: Poster
+    let votes: Votes
+    let movieLength: Int?
+    let totalSeriesLength: Int?
+    let seriesLength: Int?
+    let ratingMpaa: String?
+    let ageRating: Int?
+    let poster: Poster?
+    let backdrop: Backdrop?
     let genres: [Genre]
     let countries: [Country]
-    let persons: [Person]
-    let reviewInfo: ReviewInfo
-    let premiere: Premiere
-    let similarMovies: [SimilarMovie]
-    let status: String?
-    let movieLength: Int?
-    let logo: Logo?
-}
-
-struct ExternalId: Codable {
-    let kpHD: String?
-    let imdb: String?
-    let tmdb: Int?
+    let releaseYears: [ReleaseYear]
+    let isSeries: Bool
+    let ticketsOnSale: Bool
 }
 
 struct Rating: Codable {
-    let kp: Double?
-    let imdb: Double?
-    let tmdb: Double?
-    let filmCritics: Double?
-    let russianFilmCritics: Double?
-    let await: Double?
+    let kp: Double
+    let imdb: Double
+    let filmCritics: Double
+    let russianFilmCritics: Double
+    let await: Double
+}
+
+struct Votes: Codable {
+    let kp: Int
+    let imdb: Int
+    let filmCritics: Int
+    let russianFilmCritics: Int
+    let await: Int
 }
 
 struct Poster: Codable {
-    let url: String?
-    let previewUrl: String?
+    let url: String
+    let previewUrl: String
+}
+
+struct Backdrop: Codable {
+    let url: String
+    let previewUrl: String
 }
 
 struct Genre: Codable {
@@ -60,44 +76,9 @@ struct Country: Codable {
     let name: String
 }
 
-struct Person: Codable {
-    let id: Int
-    let photo: String?
-    let name: String
-    let enName: String?
-    let description: String?
-    let profession: String?
-    let enProfession: String?
-}
-
-struct ReviewInfo: Codable {
-    let count: Int
-    let positiveCount: Int
-    let percentage: String
-}
-
-struct Premiere: Codable {
-    let country: String
-    let world: String
-    let russia: String
-    let digital: String?
-    let cinema: String
-    let bluray: String?
-    let dvd: String?
-}
-
-struct SimilarMovie: Codable, Identifiable {
-    let id: Int
-    let name: String
-    let enName: String?
-    let alternativeName: String?
-    let year: Int
-    let poster: Poster
-    let rating: Rating
-}
-
-struct Logo: Codable {
-    let url: String?
+struct ReleaseYear: Codable {
+    let start: Int?
+    let end: Int?
 }
 
 

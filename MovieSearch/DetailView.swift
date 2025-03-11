@@ -8,13 +8,12 @@
 import SwiftUI
 
 struct DetailView: View {
-    
-    var movie: Docs
+    var movie: Movie
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
-                if let posterURL = movie.poster.previewUrl, let url = URL(string: posterURL) {
+                if let posterURL = movie.poster?.previewUrl, let url = URL(string: posterURL) {
                     AsyncImage(url: url) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
@@ -24,7 +23,7 @@ struct DetailView: View {
                     }
                     .frame(height: 250)
                 }
-                Text(movie.name)
+                Text(movie.name ?? "Без названия")
                     .font(.title)
                     .bold()
                     .padding(.top)
@@ -35,11 +34,9 @@ struct DetailView: View {
                         .padding(.top, 2)
                 }
                 
-                if let rating = movie.rating.kp {
-                    Text("Рейтинг: \(rating, specifier: "%.1f") (КП)")
-                        .font(.subheadline)
-                        .padding(.top, 2)
-                }
+                Text("Рейтинг: \(movie.rating.kp, specifier: "%.1f") (КП)")
+                    .font(.subheadline)
+                    .padding(.top, 2)
                 
                 if let description = movie.description {
                     Text(description)
@@ -50,42 +47,10 @@ struct DetailView: View {
                         .padding(.top)
                         .padding([.leading, .trailing], 16)
                 }
-                
-                VStack(alignment: .leading) {
-                    if !movie.premiere.world.isEmpty {
-                        Text("Премьера: \(movie.premiere.world)")
-                            .font(.subheadline)
-                            .padding(.top, 10)
-                    }
-                }
-                
-                if !movie.similarMovies.isEmpty {
-                    Text("Похожие фильмы:")
-                        .font(.headline)
-                        .padding(.top, 20)
-                
-                    ForEach(movie.similarMovies) { similarMovie in
-                        VStack(alignment: .leading) {
-                            if let similarPosterURL = similarMovie.poster.url, let url = URL(string: similarPosterURL) {
-                                AsyncImage(url: url) { image in
-                                    image.resizable().scaledToFill()
-                                } placeholder: {
-                                    Image(systemName: "photo")
-                                        .resizable()
-                                        .scaledToFit()
-                                }
-                                .frame(width: 50, height: 75)
-                            }
-                            Text(similarMovie.name)
-                                .font(.subheadline)
-                                .padding(.top, 5)
-                        }
-                        .padding([.leading, .trailing], 16)
-                    }
-                }
             }
         }
-        .navigationTitle(movie.name)
+        .navigationTitle(movie.name ?? "Без названия")
     }
 }
+
 
