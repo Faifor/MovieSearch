@@ -8,15 +8,15 @@
 import SwiftUI
 
 struct MovieView: View {
-    @State private var movies: [Movie] = []
+    @State private var movies: [Docs] = []
     @State private var currentPage = 1
-    
+
     var body: some View {
         NavigationView {
             List(movies) { movie in
                 NavigationLink(destination: DetailView(movie: movie)) {
                     HStack {
-                        if let urlString = movie.posterURL, let url = URL(string: urlString) {
+                        if let urlString = movie.poster.url, let url = URL(string: urlString) {
                             AsyncImage(url: url) { image in
                                 image.resizable().scaledToFit()
                             } placeholder: {
@@ -28,15 +28,15 @@ struct MovieView: View {
                         }
                         VStack(alignment: .leading) {
                             Text(movie.name).font(.headline)
-                            Text("Рейтинг: \(movie.rating ?? 0.0)")
+                            Text("Рейтинг: \(movie.rating.kp ?? 0.0)")
                         }
                     }
                 }
             }
-            .navigationTitle("Фильмы")
             .onAppear {
                 fetchMovies()
             }
+            .navigationTitle("Фильмы")
         }
     }
     
@@ -46,8 +46,9 @@ struct MovieView: View {
                 switch result {
                 case .success(let movies):
                     self.movies = movies
+                    print("Загружено \(movies.count) фильмов")
                 case .failure(let error):
-                    print(error.localizedDescription)
+                    print("Ошибка загрузки фильмов: \(error.localizedDescription)")
                 }
             }
         }
