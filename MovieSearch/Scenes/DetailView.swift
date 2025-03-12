@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DetailView: View {
-    var movie: Movie
+    var movie: MovieModel
     
     var body: some View {
         ScrollView {
@@ -34,7 +34,7 @@ struct DetailView: View {
                         .padding(.top, 2)
                 }
                 
-                Text("Рейтинг: \(movie.rating.kp, specifier: "%.1f") (КП)")
+                Text("Рейтинг: \(movie.rating?.kp ?? 0.0, specifier: "%.1f") (КП)")
                     .font(.subheadline)
                     .padding(.top, 2)
                 

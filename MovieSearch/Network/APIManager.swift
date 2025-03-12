@@ -12,8 +12,8 @@ struct APIManager {
     private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
-    func fetchMovies(page: Int, completion: @escaping (Result<[Movie], Error>) -> Void) {
-        guard let url = URL(string: "\(baseURL)?page=\(page)") else { return }
+    func fetchMovies(page: Int, completion: @escaping (Result<[MovieModel], Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)?page=\(page)&notNullFields=poster.url") else { return }
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
         
@@ -28,6 +28,8 @@ struct APIManager {
                 return
             }
             do {
+                let json = try JSONSerialization.jsonObject(with: data)
+                print("\(json)")
                 let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
                 DispatchQueue.main.async {
                     completion(.success(decodedResponse.docs))

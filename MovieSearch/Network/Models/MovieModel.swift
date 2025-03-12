@@ -8,26 +8,26 @@
 import Foundation
 
 struct ServerResponse: Codable {
-    let docs: [Movie]
+    let docs: [MovieModel]
     let total: Int
     let limit: Int
     let page: Int
     let pages: Int
 }
 
-struct Movie: Codable, Identifiable {
+struct MovieModel: Codable, Identifiable {
     let id: Int
     let name: String?
     let alternativeName: String?
     let enName: String?
-    let type: String
-    let typeNumber: Int
+    let type: String?
+    let typeNumber: Int?
     let year: Int?
     let description: String?
     let shortDescription: String?
     let status: String?
-    let rating: Rating
-    let votes: Votes
+    let rating: Rating?
+    let votes: Votes?
     let movieLength: Int?
     let totalSeriesLength: Int?
     let seriesLength: Int?
@@ -35,11 +35,11 @@ struct Movie: Codable, Identifiable {
     let ageRating: Int?
     let poster: Poster?
     let backdrop: Backdrop?
-    let genres: [Genre]
-    let countries: [Country]
-    let releaseYears: [ReleaseYear]
-    let isSeries: Bool
-    let ticketsOnSale: Bool
+    let genres: [Genre]?
+    let countries: [Country]?
+    let releaseYears: [ReleaseYear]?
+    let isSeries: Bool?
+    let ticketsOnSale: Bool?
 }
 
 struct Rating: Codable {
