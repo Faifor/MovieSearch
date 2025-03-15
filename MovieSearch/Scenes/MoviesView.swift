@@ -14,6 +14,7 @@ struct MoviesView: View {
     @State private var errorMessage: String?
     
     func loadMovies() {
+        currentPage += 1
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
@@ -50,7 +51,7 @@ struct MoviesView: View {
                             ProgressView()
                         } else {
                             Button("Загрузить ещё") {
-                                currentPage += 1
+                                
                                 loadMovies()
                             }
                             .padding()
