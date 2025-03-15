@@ -12,7 +12,7 @@ struct DetailView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
+            VStack(alignment: .center, spacing: 16) {
                 Group {
                     if let posterURL = movie.poster?.previewUrl, let url = URL(string: posterURL) {
                         AsyncImage(url: url) { image in
@@ -58,7 +58,8 @@ struct DetailView: View {
                         .padding([.leading, .trailing], 16)
             }
         }
-        .navigationTitle(movie.name ?? "Без названия")
+        .navigationTitle(movie.name ?? "Фильм")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

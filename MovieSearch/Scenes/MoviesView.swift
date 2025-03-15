@@ -12,6 +12,7 @@ struct MoviesView: View {
     @State private var currentPage = 1
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var path: [AppRoute] = []
     
     func loadMovies() {
         currentPage += 1
@@ -32,8 +33,17 @@ struct MoviesView: View {
         }
     }
     
+    private func navigateToDetail(_ movie: MovieModel) {
+        path.append(.movieDetail(movie))
+    }
+    private func checkIfLastMovie(_ movie: MovieModel) {
+        if movie == movies.last {
+            loadMovies()
+        }
+    }
+    
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $path) {
             VStack {
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
@@ -45,16 +55,16 @@ struct MoviesView: View {
                     LazyVStack{
                         ForEach(movies, id: \.id) { movie in
                             MovieItemView(movie: movie)
+                                .onTapGesture {
+                                    navigateToDetail(movie)
+                                }
                                 .tint(.black)
+                                .onAppear {
+                                    checkIfLastMovie(movie)
+                                }
                         }
                         if isLoading {
                             ProgressView()
-                        } else {
-                            Button("Загрузить ещё") {
-                                
-                                loadMovies()
-                            }
-                            .padding()
                         }
                     }
                 }
@@ -63,12 +73,19 @@ struct MoviesView: View {
                         loadMovies()
                     }
                 }
-                
                 .navigationTitle("Фильмы")
+                .navigationDestination(for: AppRoute.self) { route in
+                    switch route {
+                    case .movieDetail(let movie):
+                        DetailView(movie: movie)
+                    }
+                }
             }
         }
     }
 }
+
+
 
 struct MovieItemView: View {
     let movie: MovieModel
@@ -120,6 +137,7 @@ struct MovieItemView: View {
         }
     }
 }
+
 
 
 /*   func generateMockData() {
