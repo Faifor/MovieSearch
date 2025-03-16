@@ -9,7 +9,7 @@ import Foundation
 
 struct APIManager {
     static let shared = APIManager()
-    private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
+    private let apiKey = "HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
     func fetchMovies(page: Int, completion: @escaping (Result<[MovieModel], Error>) -> Void) {

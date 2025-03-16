@@ -68,6 +68,9 @@ struct MoviesView: View {
                         }
                     }
                 }
+                .refreshable {
+                    loadMovies()
+                }
                 .onAppear {
                     if movies.isEmpty {
                         loadMovies()
@@ -78,6 +81,17 @@ struct MoviesView: View {
                     switch route {
                     case .movieDetail(let movie):
                         DetailView(movie: movie)
+                    case .settings:
+                        SettingsView()
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        path.append(.settings)
+                    }) {
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -117,6 +131,7 @@ struct MovieItemView: View {
                 
                 VStack(alignment: .leading) {
                     Text(movie.name ?? "Без названия").font(.title2)
+                        .lineLimit(1)
                     Text(movie.description ?? "")
                         .font(.subheadline)
                         .lineLimit(3)
@@ -124,13 +139,12 @@ struct MovieItemView: View {
                     Spacer()
                 }
                 .padding()
-                
+                Spacer()
                 VStack{
-                    Text("Рейтинг \n \(movie.rating?.imdb ?? 0.0)")
+                    Text("Рейтинг \n \(String(format: "%.1f", movie.rating?.imdb ?? 0.0))")
                     Spacer()
                 }
                 .padding()
-                Spacer()
             }
             .border(Color.gray, width: 5)
             .cornerRadius(10)
