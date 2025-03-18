@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MoviesView: View {
     @State private var movies: [MovieModel] = []
-    @State private var currentPage = 1
+    @State private var currentPage = 0
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var path: [AppRoute] = []
@@ -33,9 +33,12 @@ struct MoviesView: View {
         }
     }
     
-    private func navigateToDetail(_ movie: MovieModel) {
-        path.append(.movieDetail(movie))
+    func refreshMovies() {
+        currentPage = 0
+        movies.removeAll()
+        loadMovies()
     }
+ 
     private func checkIfLastMovie(_ movie: MovieModel) {
         if movie == movies.last {
             loadMovies()
@@ -55,9 +58,6 @@ struct MoviesView: View {
                     LazyVStack{
                         ForEach(movies, id: \.id) { movie in
                             MovieItemView(movie: movie)
-                                .onTapGesture {
-                                    navigateToDetail(movie)
-                                }
                                 .tint(.black)
                                 .onAppear {
                                     checkIfLastMovie(movie)
@@ -69,7 +69,7 @@ struct MoviesView: View {
                     }
                 }
                 .refreshable {
-                    loadMovies()
+                    refreshMovies()
                 }
                 .onAppear {
                     if movies.isEmpty {
@@ -88,9 +88,7 @@ struct MoviesView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        path.append(.settings)
-                    }) {
+                    NavigationLink(value: AppRoute.settings) {
                         Image(systemName: "gearshape")
                     }
                 }
@@ -98,60 +96,6 @@ struct MoviesView: View {
         }
     }
 }
-
-
-
-struct MovieItemView: View {
-    let movie: MovieModel
-    var body: some View {
-        NavigationLink(destination: DetailView(movie: movie)) {
-            HStack {
-                Group {
-                    if let urlString = movie.poster?.url, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                            
-                        } placeholder: {
-                            ProgressView()
-                        }
-                        
-                    } else {
-                        Image(systemName: "photo")
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 100, height: 150)
-                            .clipped()
-                            .border(Color.white, width: 5)
-                    }
-                }
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 150)
-                .clipped()
-                .border(Color.white, width: 5)
-                
-                VStack(alignment: .leading) {
-                    Text(movie.name ?? "Без названия").font(.title2)
-                        .lineLimit(1)
-                    Text(movie.description ?? "")
-                        .font(.subheadline)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                }
-                .padding()
-                Spacer()
-                VStack{
-                    Text("Рейтинг \n \(String(format: "%.1f", movie.rating?.imdb ?? 0.0))")
-                    Spacer()
-                }
-                .padding()
-            }
-            .border(Color.gray, width: 5)
-            .cornerRadius(10)
-        }
-    }
-}
-
 
 
 /*   func generateMockData() {

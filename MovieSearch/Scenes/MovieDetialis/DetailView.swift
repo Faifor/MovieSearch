@@ -26,7 +26,6 @@ struct DetailView: View {
                     }
                 }
                 .aspectRatio(contentMode: .fit)
-                .frame(height: 500)
                 .padding([.leading, .trailing], 45)
                 
                 Text(movie.name ?? "Без названия")

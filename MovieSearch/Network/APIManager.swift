@@ -16,7 +16,7 @@ struct APIManager {
         guard let url = URL(string: "\(baseURL)?page=\(page)&notNullFields=poster.url") else { return }
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
-        
+        print(request)
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Ошибка запроса: \(error.localizedDescription)")
