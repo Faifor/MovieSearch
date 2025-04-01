@@ -10,7 +10,7 @@ import SwiftUI
 struct MovieItemView: View {
     let movie: MovieModel
     var body: some View {
-        NavigationLink(value: AppRoute.movieDetail(movie)) {
+        NavigationLink(value: AppRoute.movieDetail(movieId: movie.id)) {
             HStack {
                 Group {
                     if let urlString = movie.poster?.url, let url = URL(string: urlString) {

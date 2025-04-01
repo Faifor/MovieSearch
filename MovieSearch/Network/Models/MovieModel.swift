@@ -9,9 +9,9 @@ import Foundation
 
 struct ServerResponse: Codable {
     let docs: [MovieModel]
-    let total: Int
-    let limit: Int
-    let page: Int
+    let total: Int?
+    let limit: Int?
+    let page: Int?
     let pages: Int
 }
 
@@ -56,7 +56,7 @@ struct Rating: Codable {
     let imdb: Double
     let filmCritics: Double
     let russianFilmCritics: Double
-    let await: Double
+    let await: Double?
 }
 
 struct Votes: Codable {
@@ -73,8 +73,8 @@ struct Poster: Codable {
 }
 
 struct Backdrop: Codable {
-    let url: String
-    let previewUrl: String
+    let url: String?
+    let previewUrl: String?
 }
 
 struct Genre: Codable {

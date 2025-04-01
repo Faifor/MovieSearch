@@ -7,6 +7,6 @@
 import Foundation
 
 enum AppRoute: Hashable {
-    case movieDetail(MovieModel)
+    case movieDetail(movieId: Int)
     case settings
 }

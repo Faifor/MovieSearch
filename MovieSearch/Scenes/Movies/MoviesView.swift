@@ -9,36 +9,39 @@ import SwiftUI
 
 struct MoviesView: View {
     @State private var movies: [MovieModel] = []
-    @State private var currentPage = 0
+    @State private var currentPage = 1
+    @State private var totalPages = 1
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var path: [AppRoute] = []
     
     func loadMovies() {
-        currentPage += 1
-        guard !isLoading else { return }
+        guard !isLoading, currentPage <= totalPages else { return }
+        
         isLoading = true
-        errorMessage = nil
         
         APIManager.shared.fetchMovies(page: currentPage) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {
-                case .success(let fetchedMovies):
-                    self.movies.append(contentsOf: fetchedMovies)
-                case .failure(let error):
-                    self.errorMessage = "Ошибка \(error.localizedDescription)"
+                case .success(let response):
+                    if response.docs.isEmpty { return }
+                    self.movies.append(contentsOf: response.docs)
+                    self.totalPages = response.pages
+                    self.currentPage += 1
+                case .failure:
+                    return
                 }
             }
         }
     }
     
     func refreshMovies() {
-        currentPage = 0
+        currentPage = 1
         movies.removeAll()
         loadMovies()
     }
- 
+    
     private func checkIfLastMovie(_ movie: MovieModel) {
         if movie == movies.last {
             loadMovies()
@@ -55,7 +58,7 @@ struct MoviesView: View {
                 }
                 
                 ScrollView {
-                    LazyVStack{
+                    LazyVStack {
                         ForEach(movies, id: \.id) { movie in
                             MovieItemView(movie: movie)
                                 .tint(.black)
@@ -65,6 +68,11 @@ struct MoviesView: View {
                         }
                         if isLoading {
                             ProgressView()
+                        }
+                        if currentPage > totalPages {
+                            Text("Больше нет")
+                                .foregroundColor(.gray)
+                                .padding()
                         }
                     }
                 }
@@ -79,8 +87,8 @@ struct MoviesView: View {
                 .navigationTitle("Фильмы")
                 .navigationDestination(for: AppRoute.self) { route in
                     switch route {
-                    case .movieDetail(let movie):
-                        DetailView(movie: movie)
+                    case .movieDetail(let movieId):
+                        DetailView(movieId: movieId)
                     case .settings:
                         SettingsView()
                     }

@@ -12,7 +12,7 @@ struct APIManager {
     private let apiKey = "HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
-    func fetchMovies(page: Int, completion: @escaping (Result<[MovieModel], Error>) -> Void) {
+    func fetchMovies(page: Int, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
         guard let url = URL(string: "\(baseURL)?page=\(page)&notNullFields=poster.url") else { return }
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
@@ -32,10 +32,33 @@ struct APIManager {
                 print("\(json)")
                 let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
                 DispatchQueue.main.async {
-                    completion(.success(decodedResponse.docs))
+                    completion(.success(decodedResponse))
                 }
             } catch {
                 print("Ошибка декодирования: \(error.localizedDescription)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func fetchMovieDetail(movieId: Int, completion: @escaping (Result<MovieDetailModel, Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/\(movieId)") else { return }
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+        print(request)
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            if let error = error {
+                print("Ошибка запроса: \(error.localizedDescription)")
+                completion(.failure(error))
+                return
+            }
+            guard let data = data else { return }
+            do {
+                let decodedMovie = try JSONDecoder().decode(MovieDetailModel.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decodedMovie))
+                }
+            } catch {
                 completion(.failure(error))
             }
         }.resume()
