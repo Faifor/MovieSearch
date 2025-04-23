@@ -10,9 +10,22 @@
 		25336DAE2D774A350078BEEA /* MovieSearch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MovieSearch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		25ED95B02DB978BB005062DF /* Exceptions for "MovieSearch" folder in "MovieSearch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Scenes/MovieDetialis/Untitled.swift,
+			);
+			target = 25336DAD2D774A350078BEEA /* MovieSearch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		25336DB02D774A350078BEEA /* MovieSearch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				25ED95B02DB978BB005062DF /* Exceptions for "MovieSearch" folder in "MovieSearch" target */,
+			);
 			path = MovieSearch;
 			sourceTree = "<group>";
 		};

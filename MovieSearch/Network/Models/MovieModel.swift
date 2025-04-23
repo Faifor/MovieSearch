@@ -12,7 +12,7 @@ struct ServerResponse: Codable {
     let total: Int?
     let limit: Int?
     let page: Int?
-    let pages: Int
+    let pages: Int?
 }
 
 struct MovieModel: Codable, Identifiable, Hashable {
@@ -68,8 +68,8 @@ struct Votes: Codable {
 }
 
 struct Poster: Codable {
-    let url: String
-    let previewUrl: String
+    let url: String?
+    let previewUrl: String?
 }
 
 struct Backdrop: Codable {

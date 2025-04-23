@@ -8,8 +8,13 @@
 import Foundation
 
 struct APIManager {
+    
+    enum APIManagerError: Error {
+        case noData
+    }
+    
     static let shared = APIManager()
-    private let apiKey = "HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS"
+    private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
     func fetchMovies(page: Int, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
@@ -57,6 +62,37 @@ struct APIManager {
                 let decodedMovie = try JSONDecoder().decode(MovieDetailModel.self, from: data)
                 DispatchQueue.main.async {
                     completion(.success(decodedMovie))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func searchMovies(query: String, page: Int = 1, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
+        guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/search?query=\(encodedQuery)&page=\(page)") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            guard let data = data else {
+                completion(.failure(APIManagerError.noData))
+                return
+            }
+
+            do {
+                let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decodedResponse))
                 }
             } catch {
                 completion(.failure(error))
