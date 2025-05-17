@@ -9,90 +9,102 @@ import SwiftUI
 
 struct MoviesView: View {
     
-    @StateObject var viewModel: MoviesViewViewModel
-    @State private var path: [AppRoute] = []
-    
-    
+    @StateObject var viewModel = MoviesViewViewModel()
     
     var body: some View {
-        NavigationStack(path: $path) {
-            VStack {
+        NavigationStack {
+            VStack(spacing: 0) {
                 SearchBar(
                     searchText: $viewModel.searchText,
                     onSearch: {
-                        viewModel.searchMovies(page: 1)
+                        viewModel.handleSearch()
                     },
                     onClear: {
-                        viewModel.refreshMovies()
+                        viewModel.handleSearch()
                     }
                 )
                 
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .padding()
+                Picker("Сортировка", selection: $viewModel.sortOrder) {
+                    ForEach(MoviesViewViewModel.SortOrder.allCases) { option in
+                        Text(option.description).tag(option)
+                    }
                 }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
                 
                 ScrollView {
-                    LazyVStack {
+                    LazyVStack(spacing: 12) {
                         ForEach(viewModel.movies, id: \.id) { movie in
-                            MovieRow(movie: movie, onAppear: {
-                                viewModel.loadMoreIfNeeded(movie)
-                            })
+                            NavigationLink(destination: DetailView(movieId: movie.id)) {
+                                   MovieRow(movie: movie)
+                               }
+                                .onAppear {
+                                    if movie == viewModel.movies.last {
+                                        if viewModel.isSearching {
+                                            viewModel.searchMovies(page: viewModel.currentPage)
+                                        } else {
+                                            viewModel.loadMovies()
+                                        }
+                                    }
+                                }
                         }
                         
                         if viewModel.isLoading {
-                            ProgressView()
-                        }
-                        if viewModel.currentPage > viewModel.totalPages && !viewModel.isSearching {
-                            Text("Больше нет")
-                                .foregroundColor(.gray)
-                                .padding()
+                            ProgressView().padding()
                         }
                     }
+                    .padding(.top, 8)
                 }
                 .refreshable {
                     viewModel.refreshMovies()
-                    
                 }
                 .onAppear {
                     if viewModel.movies.isEmpty {
                         viewModel.loadMovies()
                     }
                 }
-                .navigationTitle("Фильмы")
-                .navigationDestination(for: AppRoute.self) { route in
-                    switch route {
-                    case .movieDetail(let movieId):
-                        DetailView(movieId: movieId)
-                    case .settings:
-                        SettingsView()
-                    }
-                }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(value: AppRoute.settings) {
-                        Image(systemName: "gearshape")
-                    }
-                }
-            }
+            .navigationTitle("Фильмы")
         }
     }
 }
 
 struct MovieRow: View {
     let movie: MovieModel
-    let onAppear: () -> Void
     
     var body: some View {
-        NavigationLink(value: AppRoute.movieDetail(movieId: movie.id)) {
-            MovieItemView(movie: movie)
-                .tint(.black)
-                .onAppear {
-                    onAppear()
+        HStack(spacing: 12) {
+            AsyncImage(url: URL(string: movie.poster?.url ?? "")) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                Color.gray.opacity(0.3)
+            }
+            .frame(width: 80, height: 120)
+            .cornerRadius(8)
+            .clipped()
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text(movie.name ?? "Без названия")
+                    .font(.headline)
+                    .lineLimit(2)
+                
+                if let rating = movie.rating?.kp {
+                    Text("Рейтинг: \(String(format: "%.1f", rating))")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
+            }
+            
+            Spacer()
         }
+        .padding(.vertical, 8)
+        .padding(.horizontal)
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(10)
+        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .padding(.horizontal)
     }
 }
 
