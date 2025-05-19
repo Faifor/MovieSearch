@@ -17,43 +17,48 @@ struct APIManager {
     private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
-    func fetchMovies(page: Int, limit: Int = 10, sortField: String, sortType: Int = 1, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
-            var components = URLComponents(string: baseURL)!
-            components.queryItems = [
-                URLQueryItem(name: "page", value: "\(page)"),
-                URLQueryItem(name: "limit", value: "\(limit)"),
-                URLQueryItem(name: "sortField", value: sortField),
-                URLQueryItem(name: "sortType", value: "\(sortType)"),
-                URLQueryItem(name: "notNullFields", value: "poster.url")
-            ]
-            
-            guard let url = components.url else {
-                completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+    func fetchMovies(page: Int, limit: Int = 10, sortField: String?, sortType: Int = 1, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
+        var components = URLComponents(string: baseURL)!
+        var queryItems = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "notNullFields", value: "poster.url")
+        ]
+        
+        if let field = sortField {
+            queryItems.append(URLQueryItem(name: "sortField", value: field))
+            queryItems.append(URLQueryItem(name: "sortType", value: "\(sortType)"))
+        }
+
+        components.queryItems = queryItems
+
+        guard let url = components.url else {
+            completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            if let error = error {
+                completion(.failure(error))
                 return
             }
-            
-            var request = URLRequest(url: url)
-            request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
-            
-            URLSession.shared.dataTask(with: request) { data, _, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
+            guard let data = data else {
+                completion(.failure(APIManagerError.noData))
+                return
+            }
+            do {
+                let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decodedResponse))
                 }
-                guard let data = data else {
-                    completion(.failure(APIManagerError.noData))
-                    return
-                }
-                do {
-                    let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
-                    DispatchQueue.main.async {
-                        completion(.success(decodedResponse))
-                    }
-                } catch {
-                    completion(.failure(error))
-                }
-            }.resume()
-        }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
     
     func fetchMovieDetail(movieId: Int, completion: @escaping (Result<MovieDetailModel, Error>) -> Void) {
         guard let url = URL(string: "\(baseURL)/\(movieId)") else { return }

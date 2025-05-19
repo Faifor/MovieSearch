@@ -9,29 +9,33 @@ import Foundation
 class MoviesViewViewModel: ObservableObject {
     
     enum SortOrder: String, CaseIterable, Identifiable {
+        case none
         case nameAsc = "name_asc"
         case nameDesc = "name_desc"
         case ratingAsc = "rating.kp_asc"
         case ratingDesc = "rating.kp_desc"
-        
+
         var id: String { rawValue }
-        
-        var apiSortField: String {
+
+        var apiSortField: String? {
             switch self {
+            case .none: return nil
             case .nameAsc, .nameDesc: return "name"
             case .ratingAsc, .ratingDesc: return "rating.kp"
             }
         }
-        
+
         var apiSortType: Int {
             switch self {
             case .nameAsc, .ratingAsc: return 1
             case .nameDesc, .ratingDesc: return -1
+            case .none: return 1
             }
         }
-        
+
         var description: String {
             switch self {
+            case .none: return "Без сортировки"
             case .nameAsc: return "Имя ↑"
             case .nameDesc: return "Имя ↓"
             case .ratingAsc: return "Рейтинг ↑"
@@ -39,26 +43,41 @@ class MoviesViewViewModel: ObservableObject {
             }
         }
     }
-    
+
     @Published var movies: [MovieModel] = []
     @Published var currentPage = 1
     @Published var totalPages = 1
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var searchText: String = ""
-    @Published var isSearching: Bool = false
-    
-    @Published var sortOrder: SortOrder = .nameAsc {
+
+    @Published var sortOrder: SortOrder = .none {
         didSet {
-            refreshMovies()
+            if !isSearching {
+                refreshMovies()
+            }
         }
     }
-    
+
+    @Published var searchText: String = ""
+    var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func loadMovies() {
         guard !isLoading, currentPage <= totalPages else { return }
         isLoading = true
-        
-        APIManager.shared.fetchMovies(page: currentPage, limit: 10, sortField: sortOrder.apiSortField, sortType: sortOrder.apiSortType) { result in
+
+        if isSearching {
+            searchMovies(page: currentPage)
+            return
+        }
+
+        APIManager.shared.fetchMovies(
+            page: currentPage,
+            limit: 10,
+            sortField: sortOrder.apiSortField,
+            sortType: sortOrder.apiSortType
+        ) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {
@@ -76,23 +95,18 @@ class MoviesViewViewModel: ObservableObject {
             }
         }
     }
-    
-    func handleSearch() {
-        isSearching = !searchText.isEmpty
+
+    func refreshMovies() {
         currentPage = 1
         totalPages = 1
         movies.removeAll()
-        if isSearching {
-            searchMovies()
-        } else {
-            loadMovies()
-        }
+        loadMovies()
     }
 
     func searchMovies(page: Int = 1) {
-        guard !isLoading, !searchText.isEmpty, page <= totalPages else { return }
-        isLoading = true
+        guard !searchText.isEmpty else { return }
 
+        isLoading = true
         APIManager.shared.searchMovies(query: searchText, page: page) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -104,7 +118,7 @@ class MoviesViewViewModel: ObservableObject {
                         self.movies.append(contentsOf: response.docs)
                     }
                     self.totalPages = response.pages ?? 1
-                    self.currentPage = page + 1
+                    self.currentPage += 1
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                 }
@@ -112,14 +126,8 @@ class MoviesViewViewModel: ObservableObject {
         }
     }
 
-    func refreshMovies() {
-        currentPage = 1
-        totalPages = 1
-        movies.removeAll()
-        if isSearching {
-            searchMovies(page: 1)
-        } else {
-            loadMovies()
-        }
+    func clearSearch() {
+        searchText = ""
+        refreshMovies()
     }
 }

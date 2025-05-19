@@ -8,53 +8,65 @@
 import SwiftUI
 
 struct MoviesView: View {
-    
+
     @StateObject var viewModel = MoviesViewViewModel()
-    
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                SearchBar(
-                    searchText: $viewModel.searchText,
-                    onSearch: {
-                        viewModel.handleSearch()
-                    },
-                    onClear: {
-                        viewModel.handleSearch()
-                    }
-                )
-                
-                Picker("Сортировка", selection: $viewModel.sortOrder) {
-                    ForEach(MoviesViewViewModel.SortOrder.allCases) { option in
-                        Text(option.description).tag(option)
+            VStack {
+                HStack {
+                    TextField("Поиск...", text: $viewModel.searchText, onCommit: {
+                        viewModel.refreshMovies()
+                    })
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal)
+
+                    if viewModel.isSearching {
+                        Button(action: {
+                            viewModel.clearSearch()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.trailing)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-                
+
+                if !viewModel.isSearching {
+                    Menu {
+                        ForEach(MoviesViewViewModel.SortOrder.allCases) { option in
+                            Button(option.description) {
+                                viewModel.sortOrder = option
+                            }
+                        }
+                    } label: {
+                        Label("Сортировка", systemImage: "arrow.up.arrow.down")
+                            .font(.headline)
+                            .padding(.bottom, 8)
+                    }
+                }
+
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.movies, id: \.id) { movie in
                             NavigationLink(destination: DetailView(movieId: movie.id)) {
-                                   MovieRow(movie: movie)
-                               }
-                                .onAppear {
-                                    if movie == viewModel.movies.last {
-                                        if viewModel.isSearching {
-                                            viewModel.searchMovies(page: viewModel.currentPage)
-                                        } else {
+                                MovieRow(movie: movie)
+                                    .onAppear {
+                                        if movie == viewModel.movies.last {
                                             viewModel.loadMovies()
                                         }
                                     }
-                                }
+                            }
                         }
-                        
+
                         if viewModel.isLoading {
-                            ProgressView().padding()
+                            ProgressView()
+                                .padding()
                         }
                     }
                     .padding(.top, 8)
                 }
+                .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
                 .refreshable {
                     viewModel.refreshMovies()
                 }
@@ -63,8 +75,8 @@ struct MoviesView: View {
                         viewModel.loadMovies()
                     }
                 }
+                .navigationTitle("Фильмы")
             }
-            .navigationTitle("Фильмы")
         }
     }
 }
