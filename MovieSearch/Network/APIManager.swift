@@ -17,7 +17,7 @@ struct APIManager {
     private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
-    func fetchMovies(page: Int, limit: Int = 10, sortField: String?, sortType: Int = 1, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
+    func fetchMovies(page: Int, limit: Int = 10, sortField: String?, sortType: Int = 1, filter: String? = nil, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
         var components = URLComponents(string: baseURL)!
         var queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
@@ -29,17 +29,21 @@ struct APIManager {
             queryItems.append(URLQueryItem(name: "sortField", value: field))
             queryItems.append(URLQueryItem(name: "sortType", value: "\(sortType)"))
         }
+        
+        if let filter = filter {
+            queryItems.append(URLQueryItem(name: "filter", value: filter))
+        }
 
         components.queryItems = queryItems
-
+        
         guard let url = components.url else {
             completion(.failure(NSError(domain: "Invalid URL", code: -1)))
             return
         }
-
+        
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
-
+        
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
                 completion(.failure(error))
@@ -55,6 +59,55 @@ struct APIManager {
                     completion(.success(decodedResponse))
                 }
             } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func fetchGenres(completion: @escaping (Result<[String], Error>) -> Void) {
+        guard let url = URL(string: "https://api.kinopoisk.dev/v1.4/movie/possible-values-by-field?field=genres.name") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data = data else {
+                completion(.failure(APIManager.APIManagerError.noData))
+                return
+            }
+
+            do {
+                
+                struct GenreItem: Decodable {
+                    let value: String?
+                }
+
+                struct GenreResponse: Decodable {
+                    let field: String?
+                    let values: [GenreItem]?
+                }
+
+                let decoded = try JSONDecoder().decode(GenreResponse.self, from: data)
+                let genreNames = decoded.values?
+                    .compactMap { $0.value }
+                    .sorted() ?? []
+
+                DispatchQueue.main.async {
+                    completion(.success(genreNames))
+                }
+            } catch {
+                print("JSON decode error: \(error)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Received JSON:\n\(jsonString)")
+                }
                 completion(.failure(error))
             }
         }.resume()

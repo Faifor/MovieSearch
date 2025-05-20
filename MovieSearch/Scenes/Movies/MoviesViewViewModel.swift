@@ -19,7 +19,7 @@ class MoviesViewViewModel: ObservableObject {
 
         var apiSortField: String? {
             switch self {
-            case .none: return nil
+            case .none: return "id" 
             case .nameAsc, .nameDesc: return "name"
             case .ratingAsc, .ratingDesc: return "rating.kp"
             }
@@ -27,9 +27,9 @@ class MoviesViewViewModel: ObservableObject {
 
         var apiSortType: Int {
             switch self {
+            case .none: return 1
             case .nameAsc, .ratingAsc: return 1
             case .nameDesc, .ratingDesc: return -1
-            case .none: return 1
             }
         }
 
@@ -49,7 +49,10 @@ class MoviesViewViewModel: ObservableObject {
     @Published var totalPages = 1
     @Published var isLoading = false
     @Published var errorMessage: String?
-
+    
+    @Published var genres: [String] = []
+    @Published var selectedGenres: Set<String> = []
+    
     @Published var sortOrder: SortOrder = .none {
         didSet {
             if !isSearching {
@@ -62,6 +65,17 @@ class MoviesViewViewModel: ObservableObject {
     var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+    
+    func loadGenres() {
+        APIManager.shared.fetchGenres { result in
+            switch result {
+            case .success(let loadedGenres):
+                self.genres = loadedGenres.sorted()
+            case .failure(let error):
+                print("Ошибка загрузки жанров: \(error.localizedDescription)")
+            }
+        }
+    }
 
     func loadMovies() {
         guard !isLoading, currentPage <= totalPages else { return }
@@ -71,12 +85,22 @@ class MoviesViewViewModel: ObservableObject {
             searchMovies(page: currentPage)
             return
         }
+        
+        var filter: String? = nil
+        if !selectedGenres.isEmpty {
+            let genresArray = Array(selectedGenres)
+            if let jsonData = try? JSONSerialization.data(withJSONObject: ["genres.name": ["$in": genresArray]], options: []),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                filter = jsonString
+            }
+        }
 
         APIManager.shared.fetchMovies(
             page: currentPage,
             limit: 10,
             sortField: sortOrder.apiSortField,
-            sortType: sortOrder.apiSortType
+            sortType: sortOrder.apiSortType,
+            filter: filter
         ) { result in
             DispatchQueue.main.async {
                 self.isLoading = false

@@ -33,17 +33,46 @@ struct MoviesView: View {
                 }
 
                 if !viewModel.isSearching {
-                    Menu {
-                        ForEach(MoviesViewViewModel.SortOrder.allCases) { option in
-                            Button(option.description) {
-                                viewModel.sortOrder = option
+                    HStack(spacing: 20) {
+                        Menu {
+                            ForEach(MoviesViewViewModel.SortOrder.allCases) { option in
+                                Button(option.description) {
+                                    viewModel.sortOrder = option
+                                }
                             }
+                        } label: {
+                            Label("Сортировка", systemImage: "arrow.up.arrow.down")
+                                .font(.headline)
                         }
-                    } label: {
-                        Label("Сортировка", systemImage: "arrow.up.arrow.down")
-                            .font(.headline)
-                            .padding(.bottom, 8)
+                        
+                        Menu {
+                            if viewModel.genres.isEmpty {
+                                Text("Загрузка...")
+                            } else {
+                                ForEach(viewModel.genres, id: \.self) { genre in
+                                    Button(action: {
+                                        if viewModel.selectedGenres.contains(genre) {
+                                            viewModel.selectedGenres.remove(genre)
+                                        } else {
+                                            viewModel.selectedGenres.insert(genre)
+                                        }
+                                        viewModel.refreshMovies()
+                                    }) {
+                                        HStack {
+                                            Text(genre)
+                                            if viewModel.selectedGenres.contains(genre) {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("Жанры", systemImage: "line.horizontal.3.decrease.circle")
+                                .font(.headline)
+                        }
                     }
+                    .padding(.bottom, 8)
                 }
 
                 ScrollView {
@@ -72,6 +101,7 @@ struct MoviesView: View {
                 }
                 .onAppear {
                     if viewModel.movies.isEmpty {
+                        viewModel.loadGenres()
                         viewModel.loadMovies()
                     }
                 }
