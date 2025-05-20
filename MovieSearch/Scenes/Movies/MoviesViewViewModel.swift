@@ -49,6 +49,7 @@ class MoviesViewViewModel: ObservableObject {
     @Published var totalPages = 1
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isGenreSelectionDirty: Bool = false
     
     @Published var genres: [String] = []
     @Published var selectedGenres: Set<String> = []
@@ -67,12 +68,17 @@ class MoviesViewViewModel: ObservableObject {
     }
     
     func loadGenres() {
+        print("Начинаю загрузку жанров...")
         APIManager.shared.fetchGenres { result in
-            switch result {
-            case .success(let loadedGenres):
-                self.genres = loadedGenres.sorted()
-            case .failure(let error):
-                print("Ошибка загрузки жанров: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let loadedGenres):
+                    print("Жанры загружены: \(loadedGenres)")
+                    self.genres = loadedGenres.sorted()
+                case .failure(let error):
+                    print("Ошибка загрузки жанров: \(error.localizedDescription)")
+                    self.genres = []
+                }
             }
         }
     }

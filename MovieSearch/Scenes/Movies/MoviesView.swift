@@ -44,7 +44,7 @@ struct MoviesView: View {
                             Label("Сортировка", systemImage: "arrow.up.arrow.down")
                                 .font(.headline)
                         }
-                        
+
                         Menu {
                             if viewModel.genres.isEmpty {
                                 Text("Загрузка...")
@@ -56,7 +56,7 @@ struct MoviesView: View {
                                         } else {
                                             viewModel.selectedGenres.insert(genre)
                                         }
-                                        viewModel.refreshMovies()
+                                        viewModel.isGenreSelectionDirty = true
                                     }) {
                                         HStack {
                                             Text(genre)
@@ -66,9 +66,17 @@ struct MoviesView: View {
                                         }
                                     }
                                 }
+                                Divider()
+                                Button(action: {
+                                    viewModel.refreshMovies()
+                                    viewModel.isGenreSelectionDirty = false
+                                }) {
+                                    Label("Применить", systemImage: "checkmark.circle")
+                                }
+                                .disabled(!viewModel.isGenreSelectionDirty)
                             }
                         } label: {
-                            Label("Жанры", systemImage: "line.horizontal.3.decrease.circle")
+                            Label("Жанры (\(viewModel.selectedGenres.count))", systemImage: "line.horizontal.3.decrease.circle")
                                 .font(.headline)
                         }
                     }
