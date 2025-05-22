@@ -14,10 +14,10 @@ struct APIManager {
     }
     
     static let shared = APIManager()
-    private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
+    private let apiKey = "HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS"
     private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
     
-    func fetchMovies(page: Int, limit: Int = 10, sortField: String?, sortType: Int = 1, filter: String? = nil, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
+    func fetchMovies(page: Int, limit: Int = 10, sortField: String?, sortType: Int = 1, genreFilters: [String]? = nil, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
         var components = URLComponents(string: baseURL)!
         var queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
@@ -30,8 +30,10 @@ struct APIManager {
             queryItems.append(URLQueryItem(name: "sortType", value: "\(sortType)"))
         }
         
-        if let filter = filter {
-            queryItems.append(URLQueryItem(name: "filter", value: filter))
+        if let genres = genreFilters, !genres.isEmpty {
+            for genre in genres {
+                queryItems.append(URLQueryItem(name: "genres.name", value: genre))
+            }
         }
 
         components.queryItems = queryItems
@@ -109,7 +111,6 @@ struct APIManager {
             }
         }.resume()
     }
-
     
     func fetchMovieDetail(movieId: Int, completion: @escaping (Result<MovieDetailModel, Error>) -> Void) {
         guard let url = URL(string: "\(baseURL)/\(movieId)") else { return }

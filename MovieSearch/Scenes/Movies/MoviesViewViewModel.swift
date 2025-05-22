@@ -19,7 +19,7 @@ class MoviesViewViewModel: ObservableObject {
 
         var apiSortField: String? {
             switch self {
-            case .none: return "id" 
+            case .none: return "id"
             case .nameAsc, .nameDesc: return "name"
             case .ratingAsc, .ratingDesc: return "rating.kp"
             }
@@ -68,7 +68,6 @@ class MoviesViewViewModel: ObservableObject {
     }
     
     func loadGenres() {
-        print("Начинаю загрузку жанров...")
         APIManager.shared.fetchGenres { result in
             DispatchQueue.main.async {
                 switch result {
@@ -92,21 +91,12 @@ class MoviesViewViewModel: ObservableObject {
             return
         }
         
-        var filter: String? = nil
-        if !selectedGenres.isEmpty {
-            let genresArray = Array(selectedGenres)
-            if let jsonData = try? JSONSerialization.data(withJSONObject: ["genres.name": ["$in": genresArray]], options: []),
-               let jsonString = String(data: jsonData, encoding: .utf8) {
-                filter = jsonString
-            }
-        }
-
         APIManager.shared.fetchMovies(
             page: currentPage,
             limit: 10,
             sortField: sortOrder.apiSortField,
             sortType: sortOrder.apiSortType,
-            filter: filter
+            genreFilters: Array(selectedGenres)
         ) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
