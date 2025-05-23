@@ -5,6 +5,7 @@
 //  Created by Данила Спиридонов on 16.04.2025.
 //
 import Foundation
+import Combine
 
 class MoviesViewViewModel: ObservableObject {
     
@@ -19,7 +20,7 @@ class MoviesViewViewModel: ObservableObject {
 
         var apiSortField: String? {
             switch self {
-            case .none: return "id"
+            case .none: return nil
             case .nameAsc, .nameDesc: return "name"
             case .ratingAsc, .ratingDesc: return "rating.kp"
             }
@@ -50,33 +51,32 @@ class MoviesViewViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isGenreSelectionDirty: Bool = false
+
     
     @Published var genres: [String] = []
     @Published var selectedGenres: Set<String> = []
     
     @Published var sortOrder: SortOrder = .none {
-        didSet {
-            if !isSearching {
-                refreshMovies()
-            }
-        }
+        didSet { if !isSearching { refreshMovies() } }
     }
-
+    
     @Published var searchText: String = ""
     var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     func loadGenres() {
-        APIManager.shared.fetchGenres { result in
+        APIManager.shared.request(
+            path: "/v1/movie/possible-values-by-field",
+            query: ["field": "genres.name"],
+            decodeTo: [GenreItem].self
+        ) { result in
             DispatchQueue.main.async {
                 switch result {
-                case .success(let loadedGenres):
-                    print("Жанры загружены: \(loadedGenres)")
-                    self.genres = loadedGenres.sorted()
+                case .success(let genres):
+                    self.genres = genres.map { $0.name }.sorted()
                 case .failure(let error):
-                    print("Ошибка загрузки жанров: \(error.localizedDescription)")
-                    self.genres = []
+                    self.errorMessage = "Ошибка загрузки жанров: \(error.localizedDescription)"
                 }
             }
         }
@@ -85,32 +85,59 @@ class MoviesViewViewModel: ObservableObject {
     func loadMovies() {
         guard !isLoading, currentPage <= totalPages else { return }
         isLoading = true
+        
+        isSearching ? searchMovies(page: currentPage) : fetchMovies()
+    }
 
-        if isSearching {
-            searchMovies(page: currentPage)
-            return
+    private func fetchMovies() {
+        var query: [String: String] = [
+            "page": "\(currentPage)",
+            "limit": "10",
+            "notNullFields": "poster.url"
+        ]
+        
+        if let field = sortOrder.apiSortField {
+            query["sortField"] = field
+            query["sortType"] = "\(sortOrder.apiSortType)"
         }
         
-        APIManager.shared.fetchMovies(
-            page: currentPage,
-            limit: 10,
-            sortField: sortOrder.apiSortField,
-            sortType: sortOrder.apiSortType,
-            genreFilters: Array(selectedGenres)
-        ) { result in
+        for genre in selectedGenres {
+            query["genres.name"] = genre
+        }
+
+        APIManager.shared.request(
+            path: "/v1.4/movie",
+            query: query,
+            decodeTo: ServerResponse.self
+        ) { [weak self] result in
             DispatchQueue.main.async {
-                self.isLoading = false
+                self?.isLoading = false
                 switch result {
                 case .success(let response):
-                    if self.currentPage == 1 {
-                        self.movies = response.docs
-                    } else {
-                        self.movies.append(contentsOf: response.docs)
-                    }
-                    self.totalPages = response.pages ?? 1
-                    self.currentPage += 1
+                    self?.appendMovies(response)
                 case .failure(let error):
-                    self.errorMessage = error.localizedDescription
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func searchMovies(page: Int) {
+        APIManager.shared.request(
+            path: "/v1.4/movie/search",
+            query: [
+                "query": searchText,
+                "page": "\(page)"
+            ],
+            decodeTo: ServerResponse.self
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                switch result {
+                case .success(let response):
+                    self?.appendMovies(response, page: page)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
                 }
             }
         }
@@ -123,31 +150,18 @@ class MoviesViewViewModel: ObservableObject {
         loadMovies()
     }
 
-    func searchMovies(page: Int = 1) {
-        guard !searchText.isEmpty else { return }
-
-        isLoading = true
-        APIManager.shared.searchMovies(query: searchText, page: page) { result in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                switch result {
-                case .success(let response):
-                    if page == 1 {
-                        self.movies = response.docs
-                    } else {
-                        self.movies.append(contentsOf: response.docs)
-                    }
-                    self.totalPages = response.pages ?? 1
-                    self.currentPage += 1
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-
     func clearSearch() {
         searchText = ""
         refreshMovies()
+    }
+
+    private func appendMovies(_ response: ServerResponse, page: Int? = nil) {
+        if page ?? currentPage == 1 {
+            movies = response.docs
+        } else {
+            movies.append(contentsOf: response.docs)
+        }
+        totalPages = response.pages ?? 1
+        currentPage += 1
     }
 }
