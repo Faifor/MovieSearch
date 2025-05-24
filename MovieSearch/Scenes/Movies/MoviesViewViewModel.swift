@@ -67,7 +67,7 @@ class MoviesViewViewModel: ObservableObject {
     
     func loadGenres() {
         APIManager.shared.request(
-            path: "/v1/movie/possible-values-by-field",
+            endpoint: .genres,
             query: ["field": "genres.name"],
             decodeTo: [GenreItem].self
         ) { result in
@@ -106,7 +106,7 @@ class MoviesViewViewModel: ObservableObject {
         }
 
         APIManager.shared.request(
-            path: "/v1.4/movie",
+            endpoint: .movies,
             query: query,
             decodeTo: ServerResponse.self
         ) { [weak self] result in
@@ -124,7 +124,7 @@ class MoviesViewViewModel: ObservableObject {
 
     func searchMovies(page: Int) {
         APIManager.shared.request(
-            path: "/v1.4/movie/search",
+            endpoint: .search,
             query: [
                 "query": searchText,
                 "page": "\(page)"

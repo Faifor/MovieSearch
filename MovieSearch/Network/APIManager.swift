@@ -5,7 +5,6 @@
 //  Created by Данила Спиридонов on 05.03.2025.
 //
 
-import Foundation
 
 import Foundation
 
@@ -13,8 +12,8 @@ final class APIManager {
     
     static let shared = APIManager()
     
-    private let apiKey = "HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS"
-    private let baseURL = URL(string: "https://api.kinopoisk.dev")!
+    private let apiKey = ConfigManager.apiKey
+    private let baseURL = ConfigManager.baseURL
     
     enum APIError: Error {
         case invalidURL
@@ -24,13 +23,13 @@ final class APIManager {
     }
     
     func request<T: Decodable>(
-        path: String,
+        endpoint: Endpoint,
         method: String = "GET",
         query: [String: String]? = nil,
         decodeTo type: T.Type,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint.path), resolvingAgainstBaseURL: false) else {
             return completion(.failure(APIError.invalidURL))
         }
         

@@ -6,7 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		250032F52DE1E0A600EE7432 /* Config.plist in Resources */ = {isa = PBXBuildFile; fileRef = 250032F42DE1E0A600EE7432 /* Config.plist */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		250032F42DE1E0A600EE7432 /* Config.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Config.plist; sourceTree = "<group>"; };
 		25336DAE2D774A350078BEEA /* MovieSearch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MovieSearch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,6 +37,7 @@
 		25336DA52D774A350078BEEA = {
 			isa = PBXGroup;
 			children = (
+				250032F42DE1E0A600EE7432 /* Config.plist */,
 				25336DB02D774A350078BEEA /* MovieSearch */,
 				25336DAF2D774A350078BEEA /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				250032F52DE1E0A600EE7432 /* Config.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

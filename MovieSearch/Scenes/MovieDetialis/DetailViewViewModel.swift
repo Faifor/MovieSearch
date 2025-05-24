@@ -10,7 +10,7 @@ import Foundation
 class DetailViewViewModel: ObservableObject {
     
     let movieId: Int
-
+    
     @Published var movieDetail: MovieDetailModel?
     @Published var errorMessage: String?
     @Published var isLoading = false
@@ -23,11 +23,11 @@ class DetailViewViewModel: ObservableObject {
     func fetchMovieDetails() {
         isLoading = true
         errorMessage = nil
-
+        
         APIManager.shared.request(
-            path: "/v1.4/movie/\(movieId)",
+            endpoint: .movieDetail(id: movieId),
             decodeTo: MovieDetailModel.self
-        ) { [weak self] result in
+        ){ [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 switch result {
