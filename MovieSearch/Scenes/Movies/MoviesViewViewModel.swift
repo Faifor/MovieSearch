@@ -15,9 +15,9 @@ class MoviesViewViewModel: ObservableObject {
         case nameDesc = "name_desc"
         case ratingAsc = "rating.kp_asc"
         case ratingDesc = "rating.kp_desc"
-
+        
         var id: String { rawValue }
-
+        
         var apiSortField: String? {
             switch self {
             case .none: return nil
@@ -25,7 +25,7 @@ class MoviesViewViewModel: ObservableObject {
             case .ratingAsc, .ratingDesc: return "rating.kp"
             }
         }
-
+        
         var apiSortType: Int {
             switch self {
             case .none: return 1
@@ -33,7 +33,7 @@ class MoviesViewViewModel: ObservableObject {
             case .nameDesc, .ratingDesc: return -1
             }
         }
-
+        
         var description: String {
             switch self {
             case .none: return "Без сортировки"
@@ -44,14 +44,16 @@ class MoviesViewViewModel: ObservableObject {
             }
         }
     }
-
+    
+    private let service: MovieServiceProtocol = MovieService()
+    
     @Published var movies: [MovieModel] = []
     @Published var currentPage = 1
     @Published var totalPages = 1
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isGenreSelectionDirty: Bool = false
-
+    
     
     @Published var genres: [String] = []
     @Published var selectedGenres: Set<String> = []
@@ -65,50 +67,43 @@ class MoviesViewViewModel: ObservableObject {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
+    func refreshMovies() {
+        currentPage = 1
+        totalPages = 1
+        movies.removeAll()
+        loadMovies()
+    }
+    
+    func clearSearch() {
+        searchText = ""
+        refreshMovies()
+    }
+    
     func loadGenres() {
-        APIManager.shared.request(
-            endpoint: .genres,
-            query: ["field": "genres.name"],
-            decodeTo: [GenreItem].self
-        ) { result in
+        service.fetchGenres { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let genres):
-                    self.genres = genres.map { $0.name }.sorted()
+                    self?.genres = genres
                 case .failure(let error):
-                    self.errorMessage = "Ошибка загрузки жанров: \(error.localizedDescription)"
+                    self?.errorMessage = "Ошибка загрузки жанров: \(error.localizedDescription)"
                 }
             }
         }
     }
-
+    
     func loadMovies() {
         guard !isLoading, currentPage <= totalPages else { return }
         isLoading = true
         
         isSearching ? searchMovies(page: currentPage) : fetchMovies()
     }
-
+    
     private func fetchMovies() {
-        var query: [String: String] = [
-            "page": "\(currentPage)",
-            "limit": "10",
-            "notNullFields": "poster.url"
-        ]
-        
-        if let field = sortOrder.apiSortField {
-            query["sortField"] = field
-            query["sortType"] = "\(sortOrder.apiSortType)"
-        }
-        
-        for genre in selectedGenres {
-            query["genres.name"] = genre
-        }
-
-        APIManager.shared.request(
-            endpoint: .movies,
-            query: query,
-            decodeTo: ServerResponse.self
+        service.fetchMovies(
+            page: currentPage,
+            sortOrder: sortOrder,
+            selectedGenres: selectedGenres
         ) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
@@ -121,16 +116,9 @@ class MoviesViewViewModel: ObservableObject {
             }
         }
     }
-
-    func searchMovies(page: Int) {
-        APIManager.shared.request(
-            endpoint: .search,
-            query: [
-                "query": searchText,
-                "page": "\(page)"
-            ],
-            decodeTo: ServerResponse.self
-        ) { [weak self] result in
+    
+    private func searchMovies(page: Int) {
+        service.searchMovies(query: searchText, page: page) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 switch result {
@@ -142,19 +130,7 @@ class MoviesViewViewModel: ObservableObject {
             }
         }
     }
-
-    func refreshMovies() {
-        currentPage = 1
-        totalPages = 1
-        movies.removeAll()
-        loadMovies()
-    }
-
-    func clearSearch() {
-        searchText = ""
-        refreshMovies()
-    }
-
+    
     private func appendMovies(_ response: ServerResponse, page: Int? = nil) {
         if page ?? currentPage == 1 {
             movies = response.docs

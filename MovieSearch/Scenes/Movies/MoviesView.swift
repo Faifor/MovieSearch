@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct MoviesView: View {
-
+    
     @StateObject var viewModel = MoviesViewViewModel()
     @State private var showGenrePopover = false
-
+    
     let columns = [GridItem(.adaptive(minimum: 80), spacing: 10)]
-
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -24,9 +24,16 @@ struct MoviesView: View {
                 movieList
             }
             .navigationTitle("Фильмы")
+            .toolbar {
+                NavigationLink(destination: LikedMoviesView()) {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(.red)
+                }
+            }
+            
         }
     }
-
+    
     private var searchBar: some View {
         HStack {
             TextField("Поиск...", text: $viewModel.searchText, onCommit: {
@@ -34,7 +41,7 @@ struct MoviesView: View {
             })
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .padding(.horizontal)
-
+            
             if viewModel.isSearching {
                 Button(action: {
                     viewModel.clearSearch()
@@ -46,7 +53,7 @@ struct MoviesView: View {
             }
         }
     }
-
+    
     private var sortAndGenreControls: some View {
         HStack(spacing: 20) {
             Menu {
@@ -59,7 +66,7 @@ struct MoviesView: View {
                 Label("Сортировка", systemImage: "arrow.up.arrow.down")
                     .font(.headline)
             }
-
+            
             Button {
                 showGenrePopover.toggle()
             } label: {
@@ -72,13 +79,13 @@ struct MoviesView: View {
         }
         .padding(.bottom, 8)
     }
-
+    
     private var genrePopover: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Выберите жанры")
                 .font(.title3.bold())
                 .padding(.top)
-
+            
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(viewModel.genres, id: \.self) { genre in
@@ -87,9 +94,9 @@ struct MoviesView: View {
                 }
                 .padding(.horizontal)
             }
-
+            
             Divider()
-
+            
             HStack {
                 Button(action: {
                     viewModel.selectedGenres.removeAll()
@@ -98,9 +105,9 @@ struct MoviesView: View {
                     Label("Сбросить", systemImage: "arrow.uturn.left")
                         .foregroundColor(.red)
                 }
-
+                
                 Spacer()
-
+                
                 Button(action: {
                     viewModel.refreshMovies()
                     viewModel.isGenreSelectionDirty = false
@@ -122,7 +129,7 @@ struct MoviesView: View {
         .padding()
         .frame(width: 320, height: 450)
     }
-
+    
     private func genreTag(_ genre: String) -> some View {
         Text(genre)
             .font(.subheadline)
@@ -130,13 +137,13 @@ struct MoviesView: View {
             .padding(.vertical, 8)
             .background(
                 viewModel.selectedGenres.contains(genre)
-                    ? Color.accentColor.opacity(0.8)
-                    : Color(.systemGray6)
+                ? Color.accentColor.opacity(0.8)
+                : Color(.systemGray6)
             )
             .foregroundColor(
                 viewModel.selectedGenres.contains(genre)
-                    ? .white
-                    : .primary
+                ? .white
+                : .primary
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
@@ -155,7 +162,7 @@ struct MoviesView: View {
                 }
             }
     }
-
+    
     private var movieList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
@@ -169,7 +176,7 @@ struct MoviesView: View {
                             }
                     }
                 }
-
+                
                 if viewModel.isLoading {
                     ProgressView()
                         .padding()
@@ -192,7 +199,7 @@ struct MoviesView: View {
 
 struct MovieRow: View {
     let movie: MovieModel
-
+    
     var body: some View {
         HStack(spacing: 12) {
             AsyncImage(url: URL(string: movie.poster?.url ?? "")) { image in
@@ -205,21 +212,21 @@ struct MovieRow: View {
             .frame(width: 80, height: 120)
             .cornerRadius(8)
             .clipped()
-
+            
             VStack(alignment: .leading, spacing: 6) {
                 Text(movie.name ?? "Без названия")
                     .font(.headline)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .multilineTextAlignment(.leading)
-
+                
                 if let rating = movie.rating?.kp {
                     Text("Рейтинг: \(String(format: "%.1f", rating))")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
             }
-
+            
             Spacer()
         }
         .padding(.vertical, 8)
