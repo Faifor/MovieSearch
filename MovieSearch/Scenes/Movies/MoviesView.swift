@@ -37,14 +37,18 @@ struct MoviesView: View {
     private var searchBar: some View {
         HStack {
             TextField("Поиск...", text: $viewModel.searchText, onCommit: {
-                viewModel.refreshMovies()
+                Task {
+                    await viewModel.refreshMovies()
+                }
             })
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .padding(.horizontal)
             
             if viewModel.isSearching {
                 Button(action: {
-                    viewModel.clearSearch()
+                    Task {
+                        await viewModel.clearSearch()
+                    }
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.gray)
@@ -109,7 +113,9 @@ struct MoviesView: View {
                 Spacer()
                 
                 Button(action: {
-                    viewModel.refreshMovies()
+                    Task {
+                        await viewModel.refreshMovies()
+                    }
                     viewModel.isGenreSelectionDirty = false
                     showGenrePopover = false
                 }) {
@@ -171,7 +177,9 @@ struct MoviesView: View {
                         MovieRow(movie: movie)
                             .onAppear {
                                 if movie == viewModel.movies.last {
-                                    viewModel.loadMovies()
+                                    Task {
+                                        await viewModel.loadMovies()
+                                    }
                                 }
                             }
                     }
@@ -186,12 +194,16 @@ struct MoviesView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .refreshable {
-            viewModel.refreshMovies()
+            Task {
+                await viewModel.refreshMovies()
+            }
         }
         .onAppear {
             if viewModel.movies.isEmpty {
                 viewModel.loadGenres()
-                viewModel.loadMovies()
+                Task {
+                    await viewModel.loadMovies()
+                }
             }
         }
     }

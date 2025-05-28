@@ -7,6 +7,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class MoviesViewViewModel: ObservableObject {
     
     enum SortOrder: String, CaseIterable, Identifiable {
@@ -59,75 +60,76 @@ class MoviesViewViewModel: ObservableObject {
     @Published var selectedGenres: Set<String> = []
     
     @Published var sortOrder: SortOrder = .none {
-        didSet { if !isSearching { refreshMovies() } }
-    }
+            didSet {
+                if !isSearching {
+                    Task {
+                        await refreshMovies()
+                    }
+                }
+            }
+        }
     
     @Published var searchText: String = ""
     var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    func refreshMovies() {
+    
+    func refreshMovies() async {
         currentPage = 1
         totalPages = 1
         movies.removeAll()
-        loadMovies()
+        await loadMovies()
     }
     
-    func clearSearch() {
+    func clearSearch() async {
         searchText = ""
-        refreshMovies()
+        await refreshMovies()
     }
     
     func loadGenres() {
-        service.fetchGenres { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let genres):
-                    self?.genres = genres
-                case .failure(let error):
-                    self?.errorMessage = "Ошибка загрузки жанров: \(error.localizedDescription)"
-                }
+        Task {
+            do {
+                self.genres = try await service.fetchGenres()
+            } catch {
+                self.errorMessage = "Ошибка загрузки жанров: \(error.localizedDescription)"
             }
         }
     }
     
-    func loadMovies() {
+    @MainActor
+    func loadMovies() async {
         guard !isLoading, currentPage <= totalPages else { return }
         isLoading = true
         
-        isSearching ? searchMovies(page: currentPage) : fetchMovies()
+        await isSearching ? searchMovies(page: currentPage) : fetchMovies()
     }
     
-    private func fetchMovies() {
-        service.fetchMovies(
-            page: currentPage,
-            sortOrder: sortOrder,
-            selectedGenres: selectedGenres
-        ) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let response):
-                    self?.appendMovies(response)
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+    @MainActor
+    private func fetchMovies() async {
+        isLoading = true
+        do {
+            let response = try await service.fetchMovies(
+                page: currentPage,
+                sortOrder: sortOrder,
+                selectedGenres: selectedGenres
+            )
+            appendMovies(response)
+        } catch {
+            errorMessage = error.localizedDescription
         }
+        isLoading = false
     }
     
-    private func searchMovies(page: Int) {
-        service.searchMovies(query: searchText, page: page) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let response):
-                    self?.appendMovies(response, page: page)
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+    @MainActor
+    private func searchMovies(page: Int) async {
+        do {
+            let response = try await service.searchMovies(query: searchText, page: page)
+            isLoading = false
+            appendMovies(response, page: page)
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
         }
     }
     

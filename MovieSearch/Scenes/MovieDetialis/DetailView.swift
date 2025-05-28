@@ -54,8 +54,7 @@ struct DetailView: View {
                         .font(.title)
                         .bold()
                         .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true) // Позволяет тексту расти по высоте
-                    
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                     
                     Button(action: {
@@ -70,7 +69,7 @@ struct DetailView: View {
                 
                 Divider()
 
-                Text("Год выпуска: \(viewModel.movieDetail?.year ?? 0)")
+                Text("Год выпуска: \(String(viewModel.movieDetail?.year ?? 0))")
                     .font(.subheadline)
                     .padding([.leading, .trailing], 16)
 
@@ -90,7 +89,9 @@ struct DetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if viewModel.movieDetail == nil {
-                viewModel.fetchMovieDetails()
+                Task {
+                    await viewModel.fetchMovieDetails()
+                }
             }
         }
     }

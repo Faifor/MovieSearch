@@ -22,26 +22,21 @@ class DetailViewViewModel: ObservableObject {
     init(movieId: Int) {
         self.movieId = movieId
         self.isLiked = likedService.isLiked(id: movieId)
-        fetchMovieDetails()
     }
     
-    func fetchMovieDetails() {
+    @MainActor
+    func fetchMovieDetails() async {
         isLoading = true
         errorMessage = nil
         
-        service.fetchMovieDetail(id: movieId) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let detail):
-                    self?.movieDetail = detail
-                    // обновить статус лайка (на случай если загрузка пришла позже)
-                    self?.isLiked = self?.likedService.isLiked(id: detail.id) ?? false
-                case .failure(let error):
-                    self?.errorMessage = "Ошибка: \(error.localizedDescription)"
-                }
-            }
+        do {
+            let detail = try await service.fetchMovieDetail(id: movieId)
+            movieDetail = detail
+            isLiked = likedService.isLiked(id: detail.id)
+        } catch {
+            errorMessage = "Ошибка: \(error.localizedDescription)"
         }
+        isLoading = false
     }
     
     func toggleLike() {

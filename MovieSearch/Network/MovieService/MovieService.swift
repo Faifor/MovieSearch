@@ -8,71 +8,62 @@
 import Foundation
 
 protocol MovieServiceProtocol {
-    func fetchGenres(completion: @escaping (Result<[String], Error>) -> Void)
-    func fetchMovies(page: Int, sortOrder: MoviesViewViewModel.SortOrder, selectedGenres: Set<String>, completion: @escaping (Result<ServerResponse, Error>) -> Void)
-    func searchMovies(query: String, page: Int, completion: @escaping (Result<ServerResponse, Error>) -> Void)
-    func fetchMovieDetail(id: Int, completion: @escaping (Result<MovieDetailModel, Error>) -> Void)
+    func fetchGenres() async throws -> [String]
+    func fetchMovies(page: Int, sortOrder: MoviesViewViewModel.SortOrder, selectedGenres: Set<String>) async throws -> ServerResponse
+    func searchMovies(query: String, page: Int) async throws -> ServerResponse
+    func fetchMovieDetail(id: Int) async throws -> MovieDetailModel
 }
 
 final class MovieService: MovieServiceProtocol {
     
-    func fetchGenres(completion: @escaping (Result<[String], Error>) -> Void) {
-        APIManager.shared.request(
+    func fetchGenres() async throws -> [String] {
+        let genres = try await APIManager.shared.request (
             endpoint: .genres,
             query: ["field": "genres.name"],
             decodeTo: [GenreItem].self
-        ) { result in
-            switch result {
-            case .success(let genres):
-                let names = genres.map { $0.name }.sorted()
-                completion(.success(names))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
+        )
+        return genres.map { $0.name }.sorted()
     }
     
-    func fetchMovies(page: Int, sortOrder: MoviesViewViewModel.SortOrder, selectedGenres: Set<String>, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
+    func fetchMovies(page: Int, sortOrder: MoviesViewViewModel.SortOrder, selectedGenres: Set<String>) async throws -> ServerResponse {
         var query: [String: String] = [
             "page": "\(page)",
             "limit": "10",
             "notNullFields": "poster.url"
         ]
-        
+
         if let field = sortOrder.apiSortField {
             query["sortField"] = field
             query["sortType"] = "\(sortOrder.apiSortType)"
         }
-        
-        for genre in selectedGenres {
+
+        if let genre = selectedGenres.first {
             query["genres.name"] = genre
         }
-        
-        APIManager.shared.request(
+
+        return try await APIManager.shared.request(
             endpoint: .movies,
             query: query,
-            decodeTo: ServerResponse.self,
-            completion: completion
+            decodeTo: ServerResponse.self
         )
     }
+
     
-    func searchMovies(query: String, page: Int, completion: @escaping (Result<ServerResponse, Error>) -> Void) {
-        APIManager.shared.request(
+    func searchMovies(query: String, page: Int) async throws -> ServerResponse {
+        return try await APIManager.shared.request(
             endpoint: .search,
             query: [
                 "query": query,
                 "page": "\(page)"
             ],
-            decodeTo: ServerResponse.self,
-            completion: completion
+            decodeTo: ServerResponse.self
         )
     }
     
-    func fetchMovieDetail(id: Int, completion: @escaping (Result<MovieDetailModel, Error>) -> Void) {
-        APIManager.shared.request(
+    func fetchMovieDetail(id: Int) async throws -> MovieDetailModel {
+        return try await APIManager.shared.request(
             endpoint: .movieDetail(id: id),
-            decodeTo: MovieDetailModel.self,
-            completion: completion
+            decodeTo: MovieDetailModel.self
         )
     }
 }

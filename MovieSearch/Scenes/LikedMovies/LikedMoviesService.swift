@@ -11,6 +11,8 @@ class LikedMoviesService {
     static let shared = LikedMoviesService()
 
     private let storageKey = "liked_movies"
+    
+    //попробуй избавиться
     private var likedMovies: [Int: MovieDetailModel] = [:]
 
     private init() {
@@ -29,6 +31,7 @@ class LikedMoviesService {
 
     func isLiked(id: Int) -> Bool {
         likedMovies[id] != nil
+        //.contains(where: <#T##(MovieDetailModel) throws -> Bool#>)
     }
 
     func getAllLikedMovies() -> [MovieDetailModel] {
