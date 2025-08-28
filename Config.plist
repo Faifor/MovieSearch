@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>HD9DV2N-Z9ZMGGC-K6E71TS-4FXABNS</string>
+	<key>BASE_URL</key>
+	<string>https://api.kinopoisk.dev</string>
+</dict>
+</plist>

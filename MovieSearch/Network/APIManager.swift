@@ -5,39 +5,55 @@
 //  Created by Данила Спиридонов on 05.03.2025.
 //
 
+
 import Foundation
 
-struct APIManager {
-    static let shared = APIManager()
-    private let apiKey = "CVQC8JP-KXZ46FD-G0Q391R-7R5VPPZ"
-    private let baseURL = "https://api.kinopoisk.dev/v1.4/movie"
+final class APIManager {
     
-    func fetchMovies(page: Int, completion: @escaping (Result<[MovieModel], Error>) -> Void) {
-        guard let url = URL(string: "\(baseURL)?page=\(page)&notNullFields=poster.url") else { return }
+    static let shared = APIManager()
+    
+    private let apiKey = ConfigManager.apiKey
+    private let baseURL = ConfigManager.baseURL
+    
+    enum APIError: Error {
+        case invalidURL
+        case noData
+        case decodingError(Error)
+        case httpError(Int)
+    }
+    
+    func request<T: Decodable>(
+        endpoint: Endpoint,
+        method: String = "GET",
+        query: [String: String]? = nil,
+        decodeTo type: T.Type
+    ) async throws -> T {
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint.path), resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidURL
+        }
+
+        if let query = query {
+            components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
         var request = URLRequest(url: url)
+        request.httpMethod = method
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Ошибка запроса: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            guard let data = data else {
-                print("Нет данных")
-                return
-            }
-            do {
-                let json = try JSONSerialization.jsonObject(with: data)
-                print("\(json)")
-                let decodedResponse = try JSONDecoder().decode(ServerResponse.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(decodedResponse.docs))
-                }
-            } catch {
-                print("Ошибка декодирования: \(error.localizedDescription)")
-                completion(.failure(error))
-            }
-        }.resume()
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.httpError((response as? HTTPURLResponse)?.statusCode ?? -1)
+        }
+
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
     }
 }

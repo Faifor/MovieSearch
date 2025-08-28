@@ -9,13 +9,14 @@ import Foundation
 
 struct ServerResponse: Codable {
     let docs: [MovieModel]
-    let total: Int
-    let limit: Int
-    let page: Int
-    let pages: Int
+    let total: Int?
+    let limit: Int?
+    let page: Int?
+    let pages: Int?
 }
 
-struct MovieModel: Codable, Identifiable {
+struct MovieModel: Codable, Identifiable, Hashable {
+    
     let id: Int
     let name: String?
     let alternativeName: String?
@@ -40,6 +41,14 @@ struct MovieModel: Codable, Identifiable {
     let releaseYears: [ReleaseYear]?
     let isSeries: Bool?
     let ticketsOnSale: Bool?
+    
+    static func == (lhs: MovieModel, rhs: MovieModel) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 struct Rating: Codable {
@@ -47,7 +56,7 @@ struct Rating: Codable {
     let imdb: Double
     let filmCritics: Double
     let russianFilmCritics: Double
-    let await: Double
+    let await: Double?
 }
 
 struct Votes: Codable {
@@ -59,13 +68,13 @@ struct Votes: Codable {
 }
 
 struct Poster: Codable {
-    let url: String
-    let previewUrl: String
+    let url: String?
+    let previewUrl: String?
 }
 
 struct Backdrop: Codable {
-    let url: String
-    let previewUrl: String
+    let url: String?
+    let previewUrl: String?
 }
 
 struct Genre: Codable {
